@@ -11,6 +11,7 @@ from utils.tools import strQ2B
 from keras.models import Model
 
 ROOT_DIR = os.getcwd()
+TRAIN_DATA_PATH = os.path.join(ROOT_DIR, 'data', 'LCQMC.csv')
 TEST_DATA_PATH = os.path.join(ROOT_DIR, 'data', 'collection.csv')
 MODEL_PATH = os.path.join(ROOT_DIR, 'cache_data', 'sent_sim_amsoftmax.h5')
 
@@ -105,8 +106,7 @@ def predict(encoder, data_loader, test_data, test_vec, s):
 def main(train_flag=False):
     # before train
     config = Config()
-    train_data_path = os.path.join(ROOT_DIR, 'data', 'LCQMC.csv')
-    data_loader = DataLoader(train_data_path)
+    data_loader = DataLoader(TRAIN_DATA_PATH)
     data_loader.process_raw_data()
     sent_models = SentMatching(data_loader)
     model = sent_models.model
