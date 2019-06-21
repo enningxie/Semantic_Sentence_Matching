@@ -9,14 +9,13 @@ class DataLoader(object):
     def __init__(self, data_path):
         self.data_path = data_path
         self.config = Config()
-        self._process_raw_data()
 
     def string2id(self, s):
         ids = [self.char2id.get(i, 1) for i in s[:self.config.max_len]]
         padded_ids = ids + [0] * (self.config.max_len - len(ids))
         return padded_ids
 
-    def _process_raw_data(self):
+    def process_raw_data(self):
         raw_data = pd.read_csv(self.data_path, encoding='utf-8', header=None)
         # 全角转半角
         raw_data[1] = raw_data[1].apply(strQ2B)
