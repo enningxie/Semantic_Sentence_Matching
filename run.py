@@ -9,11 +9,13 @@ from utils.model_config import Config
 from models.margin_softmax import sparse_amsoftmax_loss
 from utils.tools import strQ2B
 from keras.models import Model
+from sklearn.cluster import KMeans
 
 ROOT_DIR = os.getcwd()
 TRAIN_DATA_PATH = os.path.join(ROOT_DIR, 'data', 'LCQMC.csv')
-TEST_DATA_PATH = os.path.join(ROOT_DIR, 'data', 'collection.csv')
-MODEL_PATH = os.path.join(ROOT_DIR, 'cache_data', 'sent_sim_amsoftmax.h5')
+TEST_DATA_PATH = os.path.join(ROOT_DIR, 'data', 'valid_data_02.csv')
+MODEL_PATH = os.path.join(ROOT_DIR, 'cache_data', 'sent_sim_amsoftmax_bilstm.h5')
+PATH_FOR_ENCODER = os.path.join(ROOT_DIR, 'data', 'round_1.csv')
 
 
 def evaluate_test(ranking_model, test_vec, id2g):  # 评测函数
@@ -103,7 +105,7 @@ def predict(encoder, data_loader, test_data, test_vec, s):
         print(test_data.iloc[i][1], sims[i])
 
 
-def main(train_flag=False):
+def main(train_flag=False, test_flag=False, use_encoder=False):
     # before train
     config = Config()
     data_loader = DataLoader(TRAIN_DATA_PATH)
@@ -120,12 +122,34 @@ def main(train_flag=False):
         encoder = Model(inputs=model.input,
                         outputs=model.get_layer(index=3).output)
 
-    test_data, test_vec = evaluate_(encoder, TEST_DATA_PATH, data_loader, sent_models)
+    if test_flag:
+        # 测试文件样例大小最小：11
+        test_data, test_vec = evaluate_(encoder, TEST_DATA_PATH, data_loader, sent_models)
 
-    while True:
-        input_sent = input()
-        predict(encoder, data_loader, test_data, test_vec, input_sent)
+        # test_data, x_test, y_test, test_id2g = data_loader.process_test_data(TEST_DATA_PATH)
+        # test_vec = encoder.predict(x_test,
+        #                            verbose=True,
+        #                            batch_size=1000)  # encoder计算句向量
 
+        while True:
+            input_sent = input()
+            predict(encoder, data_loader, test_data, test_vec, input_sent)
 
+    # todo
+    if use_encoder:
+        tmp_data, x_tmp, y_tmp, tmp_id2g = data_loader.process_test_data(PATH_FOR_ENCODER)
+        tmp_vec = encoder.predict(x_tmp,
+                                  verbose=True,
+                                  batch_size=1000)  # encoder计算句向量
+        print(tmp_vec.shape)
+        print(tmp_vec[0].shape)
+        sims = np.dot(tmp_vec, tmp_vec[0])
+        for i in sims.argsort()[-1:][::-1]:
+            print(tmp_data.iloc[i][1], sims[i])
+
+        y_pred = KMeans(n_clusters=3, random_state=42).fit_predict(tmp_vec)
+        print(y_pred)
+
+    
 if __name__ == '__main__':
-    main(True)
+    main(use_encoder=True)

@@ -1,6 +1,6 @@
 # coding=utf-8
 from utils.model_config import Config
-from keras.layers import Input, Embedding, CuDNNGRU, LSTM, Lambda, Dense
+from keras.layers import Input, Embedding, CuDNNGRU, LSTM, Lambda, Dense, Bidirectional
 from keras.models import Model
 import keras.backend as K
 from keras.constraints import unit_norm
@@ -17,8 +17,8 @@ class SentMatching(object):
         x_in = Input(shape=(self.config.max_len,))
         x_embedded = Embedding(self.data_loader.max_feature + 2,
                                self.config.word_size)(x_in)
-        # x = LSTM(self.config.word_size)(x_embedded)
-        x = CuDNNGRU(self.config.word_size)(x_embedded)
+        x = Bidirectional(LSTM(64))(x_embedded)
+        # x = CuDNNGRU(self.config.word_size)(x_embedded)
         x = Lambda(lambda x: K.l2_normalize(x, 1))(x)
 
         pred = Dense(self.config.num_train_groups,
@@ -36,6 +36,3 @@ class SentMatching(object):
         x = Lambda(lambda x: K.tf.nn.top_k(x, 11)[1])(x)  # 取出topk的下标
         ranking_model = Model(x_in, x)
         return ranking_model
-
-
-
